@@ -3,30 +3,30 @@
 
 type
   #The 6502 has 13 addressing modes and stores them in 3 bits..fun
-  addressingMode = enum
+  addressingMode* = enum
     #Non-indexed
-    implicit,
-    accumulator,
-    immediate,
-    zeroPage,
-    absolute,
-    relative,
-    indirect,
+    implicit, #1 bytes
+    accumulator, #1 bytes
+    immediate, #3 bytes
+    zeroPage, #2 bytes
+    absolute, #3 bytes
+    relative, #2 bytes
+    indirect, #3 bytes
     #Indexed
-    zeroPageIndexedX,
-    zeroPageIndexedY,
-    absoluteIndexedX,
-    absoluteIndexedY,
-    indexedIndirect, #(d, x)
-    indirectIndexed #(d), y
+    zeroPageIndexedX, #2 bytes
+    zeroPageIndexedY, #2 bytes
+    absoluteIndexedX, #3 bytes
+    absoluteIndexedY, #3 bytes
+    indexedIndirect, #(d, x) 2 bytes
+    indirectIndexed #(d), y 2 bytes
 
-  instruction = object
-    mode: addressingMode
-    op: proc(c: CPU)
-    hiByte: uint8
-    loByte: uint8
+  instruction* = object
+    mode*: addressingMode
+    op*: proc(c: CPU)
+    hiByte*: uint8
+    loByte*: uint8
 
-  flags = object
+  flags* = object
     #Last addition/shift resulted in a carry/subtraction with no borrow
     carry: bool
 
@@ -50,16 +50,16 @@ type
 
     #Bit 7 of last op
     negative: bool
-  CPU = ref RP2a03
+  CPU* = ref RP2a03
   RP2A03 = object
-    memory: array[0x800, uint8]
-    accumulator: uint8
-    x, y: uint8
-    pc: uint16
-    sp: uint8
-    status: flags
-    opcode: uint8
-    inst: instruction
+    memory*: array[0x800, uint8]
+    accumulator*: uint8
+    x*, y*: uint8
+    pc*: uint16
+    sp*: uint8
+    status*: flags
+    opcode*: uint8
+    inst*: instruction
 
 proc reset*(c: CPU) =
   #A, X, Y, internal memory, APU mode in 4017: Unchanged
@@ -184,6 +184,12 @@ proc decode*(c: CPU) =
   let bbb = (c.opcode shr 2u8) and 0x07u8
   let aaa = (c.opcode shr 5u8) and 0x07u8
   let mode: addressingMode = determineAddressingMode(c, aaa, bbb, cc)
+  #TODO: Another switch off of AAAXXXCC, gross, but effective.
+  discard """
+  let maskedOp = (aaa shr 5) or cc
+  let f = instructions[maskedOp]
+  f(c)
+  """
 
 #TODO: implement
 proc execute*(c: CPU) =
