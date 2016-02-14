@@ -1,4 +1,5 @@
 import iNES/ines, mapper
+import strutils
 
 type
   Cartridge* = ref CartridgeObj
@@ -39,7 +40,7 @@ proc loadCartridge*(rom: string): Cartridge =
       f.setFilePos(f.getFilePos() + 512)
 
     #Read prg rom
-    echo("PRG Rom size: ", 0x4000u32 * header.sizeOfPRGROM)
+    echo("PRG Rom size: ", cast[int](0x4000u32 * header.sizeOfPRGROM).toHex(4))
     result.prgROM = newSeq[uint8](0x4000u32 * header.sizeOfPRGROM)
     discard f.readBytes(result.prgROM, 0, 0x4000u32 * header.sizeOfPRGROM)
 

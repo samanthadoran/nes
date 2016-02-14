@@ -84,6 +84,36 @@ proc powerOn*(c: CPU) =
   #$4015 = $00 (all channels disabled)
   #$4000-$400F = $00 (not sure about $4010-$4013)
 
+proc stepPC*(c: CPU) =
+  c.pc =
+    case c.inst.mode
+      of implicit:
+        c.pc + 1u16
+      of accumulator:
+        c.pc + 1u16
+      of immediate:
+        c.pc + 3u16
+      of zeroPage:
+        c.pc + 2u16
+      of absolute:
+        c.pc + 3u16
+      of relative:
+        c.pc + 2u16
+      of indirect:
+        c.pc + 3u16
+      of zeroPageIndexedX:
+        c.pc + 2u16
+      of zeroPageIndexedY:
+        c.pc + 2u16
+      of absoluteIndexedX:
+        c.pc + 3u16
+      of absoluteIndexedY:
+        c.pc + 3u16
+      of indexedIndirect:
+        c.pc + 2u16
+      of indirectIndexed:
+        c.pc + 2u16
+
 proc determineAddressingMode(c: CPU, aaa: uint8, bbb: uint8, cc: uint8): addressingMode =
   #Reference: http://www.llx.com/~nparker/a2/opcodes.html
   #TODO: Special case ops that don't conform to these patterns
@@ -184,6 +214,7 @@ proc decode*(c: CPU) =
   let bbb = (c.opcode shr 2u8) and 0x07u8
   let aaa = (c.opcode shr 5u8) and 0x07u8
   let mode: addressingMode = determineAddressingMode(c, aaa, bbb, cc)
+  c.inst.mode = mode
   #TODO: Another switch off of AAAXXXCC, gross, but effective.
   discard """
   let maskedOp = (aaa shr 5) or cc
