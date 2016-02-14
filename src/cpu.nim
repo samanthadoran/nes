@@ -193,5 +193,5 @@ proc decode*(c: CPU) =
 
 #TODO: implement
 proc execute*(c: CPU) =
-  c.inst.op(c)
+  #c.inst.op(c)
   discard
