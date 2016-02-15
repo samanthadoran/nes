@@ -27,28 +27,28 @@ type
 
   flags* = object
     #Last addition/shift resulted in a carry/subtraction with no borrow
-    carry: bool
+    carry*: bool
 
     #Last op resulted in zero?
-    zero: bool
+    zero*: bool
 
     #Interrupt inhibit
-    interrupt: bool
+    interrupt*: bool
 
     #BCD, ignored on RP2A03
-    decimal: bool
+    decimal*: bool
 
     #True if from php/brk, 0 if from interrupt line
-    bitFour: bool
+    bitFour*: bool
 
     #bit five is ALWAYS true
     #s: true?
 
     #True if last adc/sbc sign overflow or D6 from last BIT
-    overflow: bool
+    overflow*: bool
 
     #Bit 7 of last op
-    negative: bool
+    negative*: bool
   CPU* = ref RP2a03
   RP2A03 = object
     memory*: array[0x800, uint8]
@@ -90,7 +90,7 @@ proc stepPC*(c: CPU) =
       of accumulator:
         c.pc + 1u16
       of immediate:
-        c.pc + 3u16
+        c.pc + 2u16
       of zeroPage:
         c.pc + 2u16
       of absolute:
