@@ -1,6 +1,5 @@
 #Information mostly found from nesdev wiki
 #http://wiki.nesdev.com/w/index.php/CPU
-import nes
 type
   #The 6502 has 13 addressing modes and stores them in 3 bits..fun
   addressingMode* = enum
