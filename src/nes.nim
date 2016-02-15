@@ -46,10 +46,12 @@ proc powerOn*(nes: NES) =
   nes.cpu.pc = pc
   while true:
     echo("PC is: ", cast[int](nes.cpu.pc).toHex(4))
-    nes.cpu.opcode = nes.cpuRead(nes.cpu.pc)
+    let unmaskedOpcode = nes.cpuRead(nes.cpu.pc)
+    nes.cpu.inst.opcode = unmaskedOpcode
     nes.cpu.stepPC()
     nes.cpu.decode()
-    echo("Opcode is: ", cast[int](nes.cpu.opcode).toHex(2))
+    echo("Unmasked opcode is: 0x", cast[int](unmaskedOpcode).toHex(2))
+    echo("Decoded opcode is: 0x", cast[int](nes.cpu.inst.opcode).toHex(2))
 
 
 proc test() =

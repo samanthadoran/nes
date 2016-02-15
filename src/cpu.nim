@@ -1,6 +1,6 @@
 #Information mostly found from nesdev wiki
 #http://wiki.nesdev.com/w/index.php/CPU
-
+import nes
 type
   #The 6502 has 13 addressing modes and stores them in 3 bits..fun
   addressingMode* = enum
@@ -22,7 +22,7 @@ type
 
   instruction* = object
     mode*: addressingMode
-    op*: proc(c: CPU)
+    opcode*: uint8
     hiByte*: uint8
     loByte*: uint8
 
@@ -58,7 +58,6 @@ type
     pc*: uint16
     sp*: uint8
     status*: flags
-    opcode*: uint8
     inst*: instruction
 
 proc reset*(c: CPU) =
@@ -114,113 +113,111 @@ proc stepPC*(c: CPU) =
       of indirectIndexed:
         c.pc + 2u16
 
-proc determineAddressingMode(c: CPU, aaa: uint8, bbb: uint8, cc: uint8): addressingMode =
-  #Reference: http://www.llx.com/~nparker/a2/opcodes.html
-  #TODO: Special case ops that don't conform to these patterns
-  result = case cc
+proc initInstruction(c: CPU) =
+  let cc: uint8 = c.inst.opcode and 0x03u8
+  let bbb: uint8 = (c.inst.opcode shr 2u8) and 0x07u8
+  let aaa: uint8 = (c.inst.opcode shr 5u8) and 0x07u8
+  let maskedOp = c.inst.opcode and 0xe3u8
+  c.inst = case cc
     of 0:
       #If we have one of the branching instructions
-      if c.opcode in {0x10u8, 0x30u8, 0x50u8, 0x70u8, 0x90u8, 0xB0u8, 0xD0u8, 0xF0u8}:
-        addressingMode.relative
+      if c.inst.opcode in {0x10u8, 0x30u8, 0x50u8, 0x70u8, 0x90u8, 0xB0u8, 0xD0u8, 0xF0u8}:
+        instruction(mode: addressingMode.relative, opcode: c.inst.opcode, loByte: 0u8, hiByte: 0u8)
       #BRK, RTI, RTS: interrupt and subroutines
-      elif c.opcode in {0x0u8, 0x40u8, 0x60u8}:
-        addressingMode.implicit
+      elif c.inst.opcode in {0x0u8, 0x40u8, 0x60u8}:
+        instruction(mode: addressingMode.implicit, opcode: c.inst.opcode, loByte: 0u8, hiByte: 0u8)
       #JSR ABS: subroutine
-      elif c.opcode == 0x20u8:
-        addressingMode.absolute
+      elif c.inst.opcode == 0x20u8:
+        instruction(mode: addressingMode.absolute, opcode: c.inst.opcode, loByte: 0u8, hiByte: 0u8)
       #Bunches of single byte instructions
-      elif c.opcode in {0x08, 0x28, 0x48, 0x68, 0x88, 0xA8, 0xC8, 0xE8, 0x18,
+      elif c.inst.opcode in {0x08, 0x28, 0x48, 0x68, 0x88, 0xA8, 0xC8, 0xE8, 0x18,
                         0x38, 0x58, 0x78, 0x98, 0xB8, 0xD8, 0xF8}:
-        addressingMode.implicit
+        instruction(mode: implicit, opcode: c.inst.opcode, loByte: 0u8, hiByte: 0u8)
       else:
         case bbb
         of 0:
-          addressingMode.immediate
+          instruction(mode: addressingMode.immediate, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
         of 1:
-          addressingMode.zeroPage
+          instruction(mode: addressingMode.zeroPage, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
         of 3:
-          addressingMode.absolute
+          instruction(mode: addressingMode.absolute, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
         of 5:
-          addressingMode.zeroPageIndexedX
+          instruction(mode: addressingMode.zeroPageIndexedX, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
         of 7:
-          addressingMode.absoluteIndexedX
+          instruction(mode: addressingMode.absoluteIndexedX, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
         else:
           #This should never happen.
           #However, we need to put something here to make nim happy.
           #As such, implicit (meaning not to grab more bytes), makes most sense
-          addressingMode.implicit
+          echo("BAD OP: Got default case in: ", cc)
+          instruction(mode: addressingMode.implicit, opcode: 0u8, loByte: 0u8, hiByte: 0u8)
     of 1:
       case bbb
       of 0:
-        addressingMode.indexedIndirect
+        instruction(mode: addressingMode.indexedIndirect, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
       of 1:
-        addressingMode.zeroPage
+        instruction(mode: addressingMode.zeroPage, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
       of 2:
-        addressingMode.immediate
+        instruction(mode: addressingMode.immediate, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
       of 3:
-        addressingMode.absolute
+        instruction(mode: addressingMode.absolute, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
       of 4:
-        addressingMode.indirectIndexed
+        instruction(mode: addressingMode.indirectIndexed, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
       of 5:
-        addressingMode.zeroPageIndexedX
+        instruction(mode: addressingMode.zeroPageIndexedX, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
       of 6:
-        addressingMode.absoluteIndexedY
+        instruction(mode: addressingMode.absoluteIndexedY, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
       of 7:
-        addressingMode.absoluteIndexedX
+        instruction(mode: addressingMode.absoluteIndexedX, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
       else:
         #This should never happen.
-        addressingMode.implicit
+        echo("BAD OP: Got default case in: ", cc)
+        instruction(mode: addressingMode.implicit, opcode: 0u8, loByte: 0u8, hiByte: 0u8)
     of 2:
       #More special cases...
-      if c.opcode in {0x8A, 0x9A, 0xAA, 0xBA, 0xCA, 0xEA}:
-        addressingMode.implicit
+      if c.inst.opcode in {0x8A, 0x9A, 0xAA, 0xBA, 0xCA, 0xEA}:
+        instruction(mode: addressingMode.implicit, opcode: c.inst.opcode, loByte: 0u8, hiByte: 0u8)
       else:
         case bbb
         of 0:
-          addressingMode.immediate
+          instruction(mode: addressingMode.immediate, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
         of 1:
-          addressingMode.zeroPage
+          instruction(mode: addressingMode.zeroPage, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
         of 2:
-          addressingMode.accumulator
+          instruction(mode: addressingMode.accumulator, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
         of 3:
-          addressingMode.absolute
+          instruction(mode: addressingMode.absolute, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
         of 5:
           #STX: 100b and LDX: 101b become y instead of x indexed
           if aaa notin {4, 5}:
-            addressingMode.zeroPageIndexedX
+            instruction(mode: addressingMode.zeroPageIndexedX, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
           else:
-            addressingMode.zeroPageIndexedY
+            instruction(mode: addressingMode.zeroPageIndexedY, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
         of 7:
           #LDX: 101b becomes y instead of x indexed
           if aaa != 5:
-            addressingMode.absoluteIndexedX
+            instruction(mode: addressingMode.absoluteIndexedX, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
           else:
-            addressingMode.absoluteIndexedY
+            instruction(mode: addressingMode.absoluteIndexedY, opcode: maskedOp, loByte: 0u8, hiByte: 0u8)
         else:
+          echo("BAD OP: Got default case in: ", cc)
           #Shouldn't happen.
-          addressingMode.implicit
+          instruction(mode: addressingMode.implicit, opcode: 0u8, loByte: 0u8, hiByte: 0u8)
     else:
       #Shouldn't happen.
-      addressingMode.implicit
+      echo("BAD OP: Got default case in outer switch")
+      instruction(mode: addressingMode.zeroPage, opcode: 0u8, loByte: 0u8, hiByte: 0u8)
+
 
 #TODO: implement
 proc fetch*(c: CPU) =
-  #c.opcode = memory[c.pc]
+  #c.inst.opcode = memory[c.pc]
   discard
 
 #TODO: implement
 proc decode*(c: CPU) =
-  let cc = c.opcode and 0x03u8
-  let bbb = (c.opcode shr 2u8) and 0x07u8
-  let aaa = (c.opcode shr 5u8) and 0x07u8
-  let mode: addressingMode = determineAddressingMode(c, aaa, bbb, cc)
-  c.inst.mode = mode
   #TODO: Another switch off of AAAXXXCC, gross, but effective.
-  discard """
-  let maskedOp = (aaa shr 5) or cc
-  let f = instructions[maskedOp]
-  f(c)
-  """
+  c.initInstruction()
 
 #TODO: implement
 proc execute*(c: CPU) =
