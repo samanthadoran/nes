@@ -127,8 +127,9 @@ proc powerOn*(nes: NES) =
   nes.cpu.pc = pc
 
 proc emulate*(nes: NES) =
-  while true:
-    echo("\nPC is: ", cast[int](nes.cpu.pc).toHex(4))
+  #while true:
+  for i in 1..10:
+    echo("\nPC is: 0x", cast[int](nes.cpu.pc).toHex(4))
     let unmaskedOpcode = nes.cpuRead(nes.cpu.pc)
 
     #We need this initial unmasked opcode for decode
@@ -136,19 +137,14 @@ proc emulate*(nes: NES) =
 
     #CPU can't see system memory, so we set it from the console level
     #We set these bytes even if the instruction doesn't need it
-    let loByte = nes.cpuRead(nes.cpu.pc + 1)
-    let hiByte = nes.cpuRead(nes.cpu.pc + 2)
+    nes.cpu.inst.loByte = nes.cpuRead(nes.cpu.pc + 1)
+    nes.cpu.inst.hiByte = nes.cpuRead(nes.cpu.pc + 2)
 
     #Decode the current opcode
     nes.cpu.decode()
 
     #Step the PC
     nes.cpu.stepPC()
-
-    nes.cpu.inst.loByte = loByte
-    nes.cpu.inst.hiByte = hiByte
-    #echo("Unmasked opcode is: 0x", cast[int](unmaskedOpcode).toHex(2))
-    #echo("Decoded opcode is: 0x", cast[int](nes.cpu.inst.opcode).toHex(2))
 
     if instructions.hasKey(nes.cpu.inst.opcode):
       let op = instructions[nes.cpu.inst.opcode]
