@@ -1,6 +1,8 @@
 import cpu, ppu, cartridge
 export cpu, ppu, cartridge
+
 import strutils, tables
+
 type
   NES* = ref NESObj
   NESObj = object
@@ -68,12 +70,8 @@ proc cpuWrite*(nes: NES, address: uint16, value: uint8) =
     nes.cpu.memory[address mod cast[uint16](len(nes.cpu.memory))] = value
   #PPU Registers
   of 0x2000u16..0x3FFFu16:
-    let regIndex = ppuRegs(address mod 8)
-    case regIndex
-    of PPUSTATUS:
-      echo("We really shouldn't write to ", PPUSTATUS)
-    else:
-      nes.ppu.regs[regIndex] = value
+    let regIndex = cast[uint8](address mod 8)
+    writeRegister(nes.ppu, regIndex, value)
   #PRG RAM
   of 0x6000u16..0x7FFFu16:
     if len(nes.cart.prgRAM) != 0:
@@ -91,14 +89,8 @@ proc cpuRead*(nes: NES, address: uint16): uint8 =
     result = nes.cpu.memory[address mod cast[uint16](len(nes.cpu.memory))]
   #PPU registers
   of 0x2000u16..0x3FFFu16:
-    let regIndex = ppuRegs(address mod 8)
-    result =
-      case regIndex
-        of PPUSTATUS, OAMDATA, PPUDATA:
-          nes.ppu.regs[regIndex]
-        else:
-          echo("We really shouldn't read from ", regIndex)
-          0u8
+    let regIndex = cast[uint8](address mod 8)
+    result = readRegister(nes.ppu, regIndex)
   #APU and IO registers
   of 0x4000u16..0x401Fu16:
     discard
@@ -128,7 +120,7 @@ proc powerOn*(nes: NES) =
 
 proc emulate*(nes: NES) =
   #while true:
-  for i in 1..10:
+  while true:
     echo("\nPC is: 0x", cast[int](nes.cpu.pc).toHex(4))
     let unmaskedOpcode = nes.cpuRead(nes.cpu.pc)
 
