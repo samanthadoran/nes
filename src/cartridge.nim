@@ -13,6 +13,9 @@ type
     chrWindow*: uint8
     mapperNumber*: int
 
+const PRGSize: uint32 = 0x4000u32
+const CHRSize: uint32 = 0x2000u32
+
 
 proc loadCartridge*(rom: string): Cartridge =
   result = new(Cartridge)
@@ -40,18 +43,18 @@ proc loadCartridge*(rom: string): Cartridge =
       f.setFilePos(f.getFilePos() + 512)
 
     #Read prg rom
-    echo("PRG Rom size: ", cast[int](0x4000u32 * header.sizeOfPRGROM).toHex(4))
-    result.prgROM = newSeq[uint8](0x4000u32 * header.sizeOfPRGROM)
-    discard f.readBytes(result.prgROM, 0, 0x4000u32 * header.sizeOfPRGROM)
+    echo("PRG Rom size: 0x", cast[int](PRGSize * header.sizeOfPRGROM).toHex(4))
+    result.prgROM = newSeq[uint8](PRGSize * header.sizeOfPRGROM)
+    discard f.readBytes(result.prgROM, 0, PRGSize * header.sizeOfPRGROM)
 
     #Read chr rom if present
     if header.sizeOfCHRROM == 0:
-      result.chrRAM = newSeq[uint8] (0x2000)
+      result.chrRAM = newSeq[uint8] (CHRSize)
     else:
-      result.chrRAM = newSeq[uint8] (0x2000)
+      result.chrRAM = newSeq[uint8] (CHRSize)
 
     if result.chrRam == nil:
-      discard f.readBytes(result.chrROM, 0, 0x2000u32 * header.sizeOfCHRROM)
+      discard f.readBytes(result.chrROM, 0, CHRSize * header.sizeOfCHRROM)
 
   else:
     echo("Failed to open rom!")
