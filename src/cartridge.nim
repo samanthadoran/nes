@@ -51,7 +51,7 @@ proc loadCartridge*(rom: string): Cartridge =
     if header.sizeOfCHRROM == 0:
       result.chrRAM = newSeq[uint8] (CHRSize)
     else:
-      result.chrRAM = newSeq[uint8] (CHRSize)
+      result.chrROM = newSeq[uint8] (CHRSize)
 
     if result.chrRam == nil:
       discard f.readBytes(result.chrROM, 0, CHRSize * header.sizeOfCHRROM)
