@@ -128,6 +128,9 @@ proc initInstruction(c: CPU) =
       #JSR ABS: subroutine
       elif c.inst.opcode == 0x20u8:
         instruction(mode: addressingMode.absolute, opcode: c.inst.opcode, loByte: c.inst.loByte, hiByte: c.inst.hiByte)
+      #JMP Indirect, bug here and it breaks the pattern
+      elif c.inst.opcode == 0x6Cu8:
+        instruction(mode: addressingMode.indirect, opcode: c.inst.opcode, loByte: c.inst.loByte, hiByte: c.inst.hiByte)
       #Bunches of single byte instructions
       elif c.inst.opcode in {0x08, 0x28, 0x48, 0x68, 0x88, 0xA8, 0xC8, 0xE8, 0x18,
                         0x38, 0x58, 0x78, 0x98, 0xB8, 0xD8, 0xF8}:
@@ -207,6 +210,14 @@ proc initInstruction(c: CPU) =
       echo("BAD OP: Got default case in outer switch")
       instruction(mode: addressingMode.zeroPage, opcode: 0u8, loByte: c.inst.loByte, hiByte: c.inst.hiByte)
 
+
+proc setZN*(c: CPU, value: uint8) =
+  let signedVal = cast[int8](value)
+  if signedVal == 0:
+    c.status.zero = true
+  if signedVal < 0:
+    c.status.negative = true
+  discard
 
 #TODO: implement
 proc fetch*(c: CPU) =
