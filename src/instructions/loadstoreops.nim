@@ -18,6 +18,11 @@ instructions[0xA2u8] =
   proc(n: NES) =
     echo("LDX, mode: ", n.cpu.inst.mode)
     n.cpu.x = getValue(n)
+    n.cpu.status.negative =
+      if n.cpu.x > 127u8:
+        true
+      else:
+        false
     echo("LDX set register x to: ", n.cpu.x)
 
 instructions[0x81u8] =
