@@ -118,8 +118,16 @@ proc powerOn*(nes: NES) =
   let pc: uint16 = (cast[uint16](nes.cpuRead(0xFFFD)) shl 8) or cast[uint16](nes.cpuRead(0xFFFC))
   nes.cpu.pc = pc
 
+  discard """
+  nes.ppu.vram =
+    if nes.cart.chrROM == nil:
+      VRAM(nametables: nes.cart.chrRAM[0..0x3FFF], pallet: nes.cart.chrRAM[0x400..0x41F])
+    else:
+      VRAM(nes.cart.chrROM, nes.cart.chrROM)
+  """
+
 proc emulate*(nes: NES) =
-  #while true:
+  let debug = false
   while true:
     echo("\nPC is: 0x", cast[int](nes.cpu.pc).toHex(4))
     let unmaskedOpcode = nes.cpuRead(nes.cpu.pc)
@@ -139,6 +147,9 @@ proc emulate*(nes: NES) =
     nes.cpu.stepPC()
 
     if instructions.hasKey(nes.cpu.inst.opcode):
+      if debug:
+        echo("The actual opcode here is: 0x", cast[int](unmaskedOpcode).toHex(2))
+        echo("The decoded opcode is: 0x", cast[int](nes.cpu.inst.opcode).toHex(2))
       let op = instructions[nes.cpu.inst.opcode]
       nes.op()
     else:
