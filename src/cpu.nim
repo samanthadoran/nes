@@ -81,6 +81,22 @@ proc powerOn*(c: CPU) =
   #$4017 = $00 (frame irq enabled)
   #$4015 = $00 (all channels disabled)
   #$4000-$400F = $00 (not sure about $4010-$4013)
+proc pull*(c: CPU): uint8 =
+  inc(c.sp)
+  result = c.memory[0x100u16 or c.sp]
+proc push*(c: CPU, val: uint8) =
+  c.memory[0x100u16 or c.sp] = val
+  dec(c.sp)
+
+proc pull16*(c: CPU): uint16 =
+  let lo = c.pull()
+  let hi = c.pull()
+  result = (cast[uint16](hi) shl 8) or lo
+proc push16*(c: CPU, val: uint16) =
+  let hi = cast[uint8](val shr 8)
+  let lo = cast[uint8](val)
+  c.push(hi)
+  c.push(lo)
 
 proc stepPC*(c: CPU) =
   c.pc =
