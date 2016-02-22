@@ -29,9 +29,9 @@ type
 
   PPU* = ref PPUObj
 
-  VRAM = object
-    nametables: array[0x400, uint8]
-    pallet: array[0x20, uint8]
+  VRAM* = object
+    nametables*: array[0x400, uint8]
+    pallet*: array[0x20, uint8]
 
   PPUObj = object
     control: PPUCtrl
@@ -133,4 +133,20 @@ proc powerOn*(p: PPU) =
   p.oddFrame = false
 
 proc step*(p: PPU) =
+  #TODO: Draw logic
+
+  #We always increment the cycles PPU takes
+  inc(p.cycle)
+  #Up the scanline if required
+  if p.cycle mod screenWidth == 0:
+    inc(p.scanline)
+    #Reset if we are on a new scanline
+    if p.scanline == 262:
+      p.cycle = 0
+      p.scanline = 1
+      p.status.val = p.status.val and 0x7fu8
+  if p.scanline == vblankScanline and p.cycle == 1:
+    p.status.val = p.status.val or 128u8
+    #VBLANK!!!
+
   discard
