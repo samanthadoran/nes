@@ -141,9 +141,12 @@ proc initInstruction(c: CPU) =
       #BRK, RTI, RTS: interrupt and subroutines
       elif c.inst.opcode in {0x0u8, 0x40u8, 0x60u8}:
         instruction(mode: addressingMode.implicit, opcode: c.inst.opcode, loByte: c.inst.loByte, hiByte: c.inst.hiByte)
-      #JSR ABS: subroutine
-      elif c.inst.opcode == 0x20u8:
+      #JSR ABS and BIT ABS
+      elif c.inst.opcode in {0x20u8, 0x2Cu8}:
         instruction(mode: addressingMode.absolute, opcode: c.inst.opcode, loByte: c.inst.loByte, hiByte: c.inst.hiByte)
+      #BIT ZP
+      elif c.inst.opcode == 0x24u8:
+        instruction(mode: addressingMode.zeroPage, opcode: c.inst.opcode, loByte: c.inst.loByte, hiByte: c.inst.hiByte)
       #JMP Indirect, bug here and it breaks the pattern
       elif c.inst.opcode == 0x6Cu8:
         instruction(mode: addressingMode.indirect, opcode: c.inst.opcode, loByte: c.inst.loByte, hiByte: c.inst.hiByte)
