@@ -126,9 +126,36 @@ proc powerOn*(nes: NES) =
       VRAM(nes.cart.chrROM, nes.cart.chrROM)
   """
 
+proc pageCyclesToAdd(n: NES) =
+  let toAdd =
+    case n.cpu.inst.mode
+    of addressingMode.absoluteIndexedX:
+      let address = getAddr(n)
+      if pagesDiffer(address-uint16(n.cpu.x), address):
+        instructionPageCycles[n.cpu.inst.unmasked]
+      else:
+        0
+    of addressingMode.absoluteIndexedY:
+      let address = getAddr(n)
+      if pagesDiffer(address-cast[uint16](n.cpu.y), address):
+        instructionPageCycles[n.cpu.inst.unmasked]
+      else:
+        0
+    of addressingMode.indirectIndexed:
+      let address = getAddr(n)
+      let ptrAddr = cast[uint16](n.cpu.x) + ((cast[uint16](n.cpu.inst.hiByte) shl 8) or n.cpu.inst.loByte)
+      if pagesDiffer(address, ptrAddr):
+        instructionPageCycles[n.cpu.inst.unmasked]
+      else:
+        0
+    else:
+      0
+  n.cpu.cycles += toAdd
+
 proc emulate*(nes: NES) =
   let debug = false
   while true:
+    nes.cpu.cycles = 0
     echo("\nPC is: 0x", cast[int](nes.cpu.pc).toHex(4))
     let unmaskedOpcode = nes.cpuRead(nes.cpu.pc)
 
@@ -152,6 +179,14 @@ proc emulate*(nes: NES) =
         echo("The decoded opcode is: 0x", cast[int](nes.cpu.inst.opcode).toHex(2))
       let op = instructions[nes.cpu.inst.opcode]
       nes.op()
+
+      #Calculate cycles taken
+      nes.cpu.cycles += instructionCycles[nes.cpu.inst.unmasked]
+      nes.pageCyclesToAdd()
+
+      #PPU runs three cycles for every one cycle of the cpu
+      for i in 0u16..<(nes.cpu.cycles * 3):
+        nes.ppu.step()
     else:
       echo("Unimplemented opcode: 0x", cast[int](unmaskedOpcode).toHex(2))
       echo("Decoded as: 0x", cast[int](nes.cpu.inst.opcode).toHex(2))
