@@ -42,6 +42,7 @@ instructions[0x10u8] =
     echo("Offset is: ", cast[int8](n.cpu.inst.loByte))
     if not n.cpu.status.negative:
       echo("Branching...")
+      inc(n.cpu.cycles)
       n.cpu.pc = getAddr(n)
 
 instructions[0xB0u8] =
@@ -51,6 +52,7 @@ instructions[0xB0u8] =
     echo("Offset is: ", cast[int8](n.cpu.inst.loByte))
     if n.cpu.status.carry:
       echo("Branching...")
+      inc(n.cpu.cycles)
       n.cpu.pc = getAddr(n)
 
 instructions[0xD0u8] =
@@ -60,4 +62,5 @@ instructions[0xD0u8] =
     echo("Offset is: ", cast[int8](n.cpu.inst.loByte))
     if not n.cpu.status.zero:
       echo("Branching...")
+      inc(n.cpu.cycles)
       n.cpu.pc = getAddr(n)

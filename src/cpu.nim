@@ -1,5 +1,42 @@
 #Information mostly found from nesdev wiki
 #http://wiki.nesdev.com/w/index.php/CPU
+var instructionPageCycles*: array[256, uint8] = [
+  0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+  1u8, 1u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 1u8, 0u8, 0u8, 1u8, 1u8, 0u8, 0u8,
+  0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+  1u8, 1u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 1u8, 0u8, 0u8, 1u8, 1u8, 0u8, 0u8,
+  0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+  1u8, 1u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 1u8, 0u8, 0u8, 1u8, 1u8, 0u8, 0u8,
+  0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+  1u8, 1u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 1u8, 0u8, 0u8, 1u8, 1u8, 0u8, 0u8,
+  0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+  1u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+  0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+  1u8, 1u8, 0u8, 1u8, 0u8, 0u8, 0u8, 0u8, 0u8, 1u8, 0u8, 1u8, 1u8, 1u8, 1u8, 1u8,
+  0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+  1u8, 1u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 1u8, 0u8, 0u8, 1u8, 1u8, 0u8, 0u8,
+  0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+  1u8, 1u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 1u8, 0u8, 0u8, 1u8, 1u8, 0u8, 0u8,
+]
+var instructionCycles*: array[256, uint8] = [
+  7u8, 6u8, 2u8, 8u8, 3u8, 3u8, 5u8, 5u8, 3u8, 2u8, 2u8, 2u8, 4u8, 4u8, 6u8, 6u8,
+  2u8, 5u8, 2u8, 8u8, 4u8, 4u8, 6u8, 6u8, 2u8, 4u8, 2u8, 7u8, 4u8, 4u8, 7u8, 7u8,
+  6u8, 6u8, 2u8, 8u8, 3u8, 3u8, 5u8, 5u8, 4u8, 2u8, 2u8, 2u8, 4u8, 4u8, 6u8, 6u8,
+  2u8, 5u8, 2u8, 8u8, 4u8, 4u8, 6u8, 6u8, 2u8, 4u8, 2u8, 7u8, 4u8, 4u8, 7u8, 7u8,
+  6u8, 6u8, 2u8, 8u8, 3u8, 3u8, 5u8, 5u8, 3u8, 2u8, 2u8, 2u8, 3u8, 4u8, 6u8, 6u8,
+  2u8, 5u8, 2u8, 8u8, 4u8, 4u8, 6u8, 6u8, 2u8, 4u8, 2u8, 7u8, 4u8, 4u8, 7u8, 7u8,
+  6u8, 6u8, 2u8, 8u8, 3u8, 3u8, 5u8, 5u8, 4u8, 2u8, 2u8, 2u8, 5u8, 4u8, 6u8, 6u8,
+  2u8, 5u8, 2u8, 8u8, 4u8, 4u8, 6u8, 6u8, 2u8, 4u8, 2u8, 7u8, 4u8, 4u8, 7u8, 7u8,
+  2u8, 6u8, 2u8, 6u8, 3u8, 3u8, 3u8, 3u8, 2u8, 2u8, 2u8, 2u8, 4u8, 4u8, 4u8, 4u8,
+  2u8, 6u8, 2u8, 6u8, 4u8, 4u8, 4u8, 4u8, 2u8, 5u8, 2u8, 5u8, 5u8, 5u8, 5u8, 5u8,
+  2u8, 6u8, 2u8, 6u8, 3u8, 3u8, 3u8, 3u8, 2u8, 2u8, 2u8, 2u8, 4u8, 4u8, 4u8, 4u8,
+  2u8, 5u8, 2u8, 5u8, 4u8, 4u8, 4u8, 4u8, 2u8, 4u8, 2u8, 4u8, 4u8, 4u8, 4u8, 4u8,
+  2u8, 6u8, 2u8, 8u8, 3u8, 3u8, 5u8, 5u8, 2u8, 2u8, 2u8, 2u8, 4u8, 4u8, 6u8, 6u8,
+  2u8, 5u8, 2u8, 8u8, 4u8, 4u8, 6u8, 6u8, 2u8, 4u8, 2u8, 7u8, 4u8, 4u8, 7u8, 7u8,
+  2u8, 6u8, 2u8, 8u8, 3u8, 3u8, 5u8, 5u8, 2u8, 2u8, 2u8, 2u8, 4u8, 4u8, 6u8, 6u8,
+  2u8, 5u8, 2u8, 8u8, 4u8, 4u8, 6u8, 6u8, 2u8, 4u8, 2u8, 7u8, 4u8, 4u8, 7u8, 7u8,
+]
+
 type
   #The 6502 has 13 addressing modes and stores them in 3 bits..fun
   addressingMode* = enum
@@ -22,6 +59,7 @@ type
   instruction* = object
     mode*: addressingMode
     opcode*: uint8
+    unmasked*: uint8
     hiByte*: uint8
     loByte*: uint8
 
@@ -51,6 +89,7 @@ type
     negative*: bool
   CPU* = ref RP2a03
   RP2A03 = object
+    cycles*: uint16
     memory*: array[0x800, uint8]
     accumulator*: uint8
     x*, y*: uint8
@@ -58,6 +97,9 @@ type
     sp*: uint8
     status*: flags
     inst*: instruction
+
+proc pagesDiffer*(a: uint16, b: uint16): bool =
+  result = (a and 0xFF00) != (b and 0xFF00)
 
 proc reset*(c: CPU) =
   #A, X, Y, internal memory, APU mode in 4017: Unchanged
@@ -133,6 +175,7 @@ proc initInstruction(c: CPU) =
   let bbb: uint8 = (c.inst.opcode shr 2u8) and 0x07u8
   let aaa: uint8 = (c.inst.opcode shr 5u8) and 0x07u8
   let maskedOp = c.inst.opcode and 0xe3u8
+  let unmasked = c.inst.opcode
   c.inst = case cc
     of 0:
       #If we have one of the branching instructions
@@ -228,6 +271,7 @@ proc initInstruction(c: CPU) =
       #Shouldn't happen.
       echo("BAD OP: Got default case in outer switch")
       instruction(mode: addressingMode.zeroPage, opcode: 0u8, loByte: c.inst.loByte, hiByte: c.inst.hiByte)
+  c.inst.unmasked = unmasked
 
 
 proc setZN*(c: CPU, value: uint8) =
