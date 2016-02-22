@@ -7,7 +7,13 @@ instructions[0x20u8] =
     echo("JSR, mode: ", n.cpu.inst.mode)
     n.cpu.push16(n.cpu.pc)
     #Move the PC to where specified
-    n.cpu.pc = (cast[uint16](n.cpu.inst.hiByte) shl 8) or cast[uint16](n.cpu.inst.loByte)
+    n.cpu.pc = getAddr(n)
+
+instructions[0x40u8] =
+  #JMP absolute
+  proc(n: NES) =
+    echo("JMP, mode: ", n.cpu.inst.mode)
+    n.cpu.pc = getAddr(n)
 
 instructions[0x60u8] =
   #RTS
@@ -52,6 +58,6 @@ instructions[0xD0u8] =
   proc(n: NES) =
     echo("BNE, mode: ", n.cpu.inst.mode)
     echo("Offset is: ", cast[int8](n.cpu.inst.loByte))
-    if n.cpu.status.zero:
+    if not n.cpu.status.zero:
       echo("Branching...")
       n.cpu.pc = getAddr(n)
