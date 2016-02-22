@@ -1,6 +1,14 @@
 import ../console
 import tables
 
+instructions[0xA0u8] =
+  #LDY
+  proc(n: NES) =
+    echo("LDY, mode: ", n.cpu.inst.mode)
+    n.cpu.y = getValue(n)
+    n.cpu.setZN(n.cpu.y)
+    echo("Stored value: ", n.cpu.y)
+
 instructions[0xA1u8] =
   #LDA
   proc(n: NES) =
